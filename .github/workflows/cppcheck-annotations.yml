@@ -3,12 +3,7 @@ name: Code Analysis
 on:
   push:
     branches:
-      - master  # Adjust the branch as needed
-  pull_request:
-    branches:
-      - master  # Adjust the branch as needed
-  schedule:
-    - cron: "0 0 * * *"  # Run every day at midnight UTC
+      - main
 
 jobs:
   build:
@@ -17,18 +12,22 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      
+
       - name: Install cppcheck
         run: sudo apt-get update && sudo apt-get install -y cppcheck
 
       - name: Run CppCheck and save output
         run: cppcheck . > cppcheck_output.txt 2>&1
-      
+
       - name: Check for issues
         run: |
           if [ -s "cppcheck_output.txt" ] && grep -q "error" cppcheck_output.txt; then
-            echo "Errors found. Aborting push."
+            echo "Errors found. Workflow failed."
             exit 1
           else
-            echo "No errors found. Push allowed."
+            echo "No errors found. Proceeding with push."
           fi
+
+      - name: Push changes
+        if: success()
+        run: git push origin main
